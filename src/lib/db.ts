@@ -73,8 +73,19 @@ export async function getUserById(id: string): Promise<User | null> {
   return db.users.find(user => user.id === id) || null;
 }
 
+export async function getUserByEmail(email: string): Promise<User | null> {
+  const db = await readDatabase();
+  return db.users.find(user => user.email.toLowerCase() === email.toLowerCase()) || null;
+}
+
 export async function createUser(userData: UserFormData): Promise<User> {
   const db = await readDatabase();
+  
+  const existingUser = await getUserByEmail(userData.email);
+  if (existingUser) {
+    throw new Error('Email already exists');
+  }
+  
   const newUser: User = {
     id: nanoid(),
     ...userData,
@@ -90,6 +101,11 @@ export async function updateUser(id: string, userData: UserFormData): Promise<Us
   
   if (userIndex === -1) {
     return null;
+  }
+  
+  const existingUser = await getUserByEmail(userData.email);
+  if (existingUser && existingUser.id !== id) {
+    throw new Error('Email already exists');
   }
   
   const updatedUser: User = {

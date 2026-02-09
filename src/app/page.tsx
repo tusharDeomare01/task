@@ -49,8 +49,9 @@ export default function Home() {
       setUsers((prev) => [...prev, newUser]);
       setIsFormOpen(false);
       showToast('User created successfully', 'success');
-    } catch (error) {
-      showToast('Failed to create user', 'error');
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || error?.response?.data?.error || 'Failed to create user';
+      showToast(errorMessage, 'error');
       console.error('Error creating user:', error);
     } finally {
       setIsSubmitting(false);
@@ -69,8 +70,9 @@ export default function Home() {
       setIsFormOpen(false);
       setSelectedUser(null);
       showToast('User updated successfully', 'success');
-    } catch (error) {
-      showToast('Failed to update user', 'error');
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || error?.response?.data?.error || 'Failed to update user';
+      showToast(errorMessage, 'error');
       console.error('Error updating user:', error);
     } finally {
       setIsSubmitting(false);
