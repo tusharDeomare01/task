@@ -3,36 +3,64 @@ import path from 'path';
 import { User, UserFormData } from '@/types/user';
 import { nanoid } from 'nanoid';
 
-const isServerless = process.env.NODE_ENV === 'production';
-const DB_PATH = isServerless
-  ? path.join('/tmp', 'db.json')
-  : path.join(process.cwd(), 'server', 'db.json');
+function isServerlessEnvironment(): boolean {
+  return process.env.NODE_ENV === 'production';
+}
+
+const DB_PATH = path.join(process.cwd(), 'server', 'db.json');
 
 interface Database {
   users: User[];
 }
 
-async function ensureDatabase(): Promise<Database> {
+let inMemoryDb: Database | null = null;
+
+function initInMemoryDb(): Database {
+  if (!inMemoryDb) {
+    inMemoryDb = { users: [] };
+  }
+  return inMemoryDb;
+}
+
+async function ensureDatabaseFile(): Promise<Database> {
   try {
     const data = await fs.readFile(DB_PATH, 'utf-8');
     return JSON.parse(data) as Database;
   } catch (error: any) {
-    // if (error.code === 'ENOENT') {
-    //   const initialData: Database = { users: [] };
-    //   await fs.mkdir(path.dirname(DB_PATH), { recursive: true });
-    //   await fs.writeFile(DB_PATH, JSON.stringify(initialData, null, 2), 'utf-8');
-    //   return initialData;
-    // }
+    if (error.code === 'ENOENT') {
+      const initialData: Database = { users: [] };
+      await fs.mkdir(path.dirname(DB_PATH), { recursive: true });
+      await fs.writeFile(DB_PATH, JSON.stringify(initialData, null, 2), 'utf-8');
+      return initialData;
+    }
     throw error;
   }
 }
 
 async function readDatabase(): Promise<Database> {
-  return await ensureDatabase();
+  if (isServerlessEnvironment()) {
+    return initInMemoryDb();
+  } else {
+    try {
+      return await ensureDatabaseFile();
+    } catch (error: any) {
+      console.warn('File-based storage failed, falling back to in-memory:', error.message);
+      return initInMemoryDb();
+    }
+  }
 }
 
 async function writeDatabase(data: Database): Promise<void> {
-  await fs.writeFile(DB_PATH, JSON.stringify(data, null, 2), 'utf-8');
+  if (isServerlessEnvironment()) {
+    inMemoryDb = data;
+  } else {
+    try {
+      await fs.writeFile(DB_PATH, JSON.stringify(data, null, 2), 'utf-8');
+    } catch (error: any) {
+      console.warn('File write failed, using in-memory storage:', error.message);
+      inMemoryDb = data;
+    }
+  }
 }
 
 export async function getAllUsers(): Promise<User[]> {
