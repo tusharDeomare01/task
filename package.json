@@ -3,10 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"npm run server\" \"next dev\"",
-    "server": "json-server --watch server/db.json --port 3001",
+    "dev": "next dev",
     "build": "next build",
-    "start": "concurrently \"npm run server\" \"next start\"",
+    "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
@@ -16,6 +15,7 @@
     "clsx": "^2.1.1",
     "framer-motion": "^12.33.0",
     "lucide-react": "^0.563.0",
+    "nanoid": "^5.1.6",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
