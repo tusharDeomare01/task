@@ -46,21 +46,31 @@ export async function PUT(
       );
     }
     
-    const updatedUser = await updateUser(resolvedParams.id, validationResult.data);
-    
-    if (!updatedUser) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+    try {
+      const updatedUser = await updateUser(resolvedParams.id, validationResult.data);
+      
+      if (!updatedUser) {
+        return NextResponse.json(
+          { error: 'User not found' },
+          { status: 404 }
+        );
+      }
+      
+      return NextResponse.json(updatedUser, { status: 200 });
+    } catch (error: any) {
+      if (error.message === 'Email already exists') {
+        return NextResponse.json(
+          { error: 'Email already exists', message: 'A user with this email address already exists' },
+          { status: 409 }
+        );
+      }
+      throw error;
     }
-    
-    return NextResponse.json(updatedUser, { status: 200 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating user:', error);
     return NextResponse.json(
-      { error: 'Failed to update user' },
-      { status: 500 }
+      { error: error.message || 'Failed to update user' },
+      { status: error.message === 'Email already exists' ? 409 : 500 }
     );
   }
 }

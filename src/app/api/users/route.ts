@@ -30,13 +30,23 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const newUser = await createUser(validationResult.data);
-    return NextResponse.json(newUser, { status: 201 });
-  } catch (error) {
+    try {
+      const newUser = await createUser(validationResult.data);
+      return NextResponse.json(newUser, { status: 201 });
+    } catch (error: any) {
+      if (error.message === 'Email already exists') {
+        return NextResponse.json(
+          { error: 'Email already exists', message: 'A user with this email address already exists' },
+          { status: 409 }
+        );
+      }
+      throw error;
+    }
+  } catch (error: any) {
     console.error('Error creating user:', error);
     return NextResponse.json(
-      { error: 'Failed to create user' },
-      { status: 500 }
+      { error: error.message || 'Failed to create user' },
+      { status: error.message === 'Email already exists' ? 409 : 500 }
     );
   }
 }
